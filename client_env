@@ -1,0 +1,40 @@
+#!/usr/bin/ksh
+
+# This work is licensed under the GNU Affero General Public License, V3
+# Copyright (C) 2013 John P Mayer https://github.com/johnpmayer
+
+# Be sure to download and install jq binaries here http://stedolan.github.io/jq/download/
+
+alias ece='vi client_env; . ./client_env'
+
+TOKEN=ae01bba8-5fee-45f1-8ed7-fbe2122ad34e
+URL=http://54.235.97.6/api/hermes
+
+function post_hermes
+{
+  curl -s -X POST -H "Content-Type: application/json" --data @- ${URL} | jq .
+}
+
+function cmd
+{
+  cmd=$1
+  echo {} | jq ".Token=\"${TOKEN}\"" | jq ".Command=\"${cmd}\""
+}
+
+alias new_game="cmd INIT | post_hermes"
+alias play_turn="cmd PLAY | post_hermes"
+
+function nochange
+{
+  cmd CHNG \
+    | jq ".RequestParam.UpgradeInfrastructure=false" \
+    | jq ".RequestParam.UpgradeToResearch=\"DEFAULT\"" \
+    | jq ".RequestParam.Servers={}"
+}
+
+function addnode
+{
+  tier=$1
+  region=$2
+  cmd CHNG | jq ".RequestParam.Servers.${tier}.ServerRegions.${region}.NodeCount=1"
+}
